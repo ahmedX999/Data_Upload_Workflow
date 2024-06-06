@@ -5,7 +5,7 @@ provider "aws" {
 
 
 data "aws_lambda_function" "existing_lambda" {
-  count         = 1
+  count         = can(data.aws_lambda_function.existing_lambda[0]) ? 1 : 0
   function_name = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda"
 }
 
