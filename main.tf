@@ -1,4 +1,8 @@
 // Define a local variable to check if the Lambda function exists
+data "aws_lambda_function" "existing_lambda" {
+  function_name = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda"
+}
+
 locals {
   lambda_function_exists = length(data.aws_lambda_function.existing_lambda) > 0
 }
