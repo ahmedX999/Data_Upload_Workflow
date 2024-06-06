@@ -1,9 +1,6 @@
 name: Deploy Lambda Function
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       user_id:
@@ -24,6 +21,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
 
@@ -32,9 +36,6 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: terraform apply -auto-approve -var "user_id=${{ github.event.inputs.user_id }}" -var "instance_id=${{ github.event.inputs.instance_id }}" -var "instance_type=${{ github.event.inputs.instance_type }}"
 
       - name: Output Results
