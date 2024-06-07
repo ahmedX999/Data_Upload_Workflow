@@ -1,24 +1,40 @@
 provider "aws" {
-  region = "us-east-1"
+  region = "us-east-1" # Specify your region here
 }
 
-
-variable "lambda_function_exists" {
-  default = length(data.aws_lambda_function.existing_lambda) > 0
+variable "lambda_function_name" {
+  description = "The name of the Lambda function"
+  type        = string
+  default     = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda"
 }
 
-// Create IAM role, Lambda function, and policy attachment conditionally based on the existence of the Lambda function
-resource "aws_iam_role" "lambda_exec_role" {
-  count = var.lambda_function_exists ? 0 : 1
+# Data source to check if the Lambda function exists
+data "aws_lambda_function" "existing_lambda" {
+  function_name = var.lambda_function_name
 
+  # Using a count to conditionally fetch the data or not
+  count = length(try([aws_lambda_function.existing_lambda.arn], [])) == 1 ? 1 : 0
+}
+
+# Conditional resource creation based on whether the function exists
+resource "aws_lambda_function" "new_lambda" {
+  count = length(try([data.aws_lambda_function.existing_lambda.arn], [])) == 0 ? 1 : 0
+
+  function_name = var.lambda_function_name
+  role          = aws_iam_role.lambda_exec.arn
+  package_type  = "Image"
+  image_uri     = var.instance_type == "google_drive" ? "aws_account_id.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-google-drive:latest" : "aws_account_id.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-s3-bucket:latest"
+}
+
+resource "aws_iam_role" "lambda_exec" {
   name = "lambda_exec_role"
 
   assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
+    Version = "2012-10-17"
     Statement = [
       {
-        Action   = "sts:AssumeRole"
-        Effect   = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           Service = "lambda.amazonaws.com"
         }
@@ -27,23 +43,23 @@ resource "aws_iam_role" "lambda_exec_role" {
   })
 }
 
-resource "aws_lambda_function" "lambda_function" {
-  count = var.lambda_function_exists ? 0 : 1
-
-  function_name = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda"
-  role          = aws_iam_role.lambda_exec_role[count.index].arn
-  package_type  = "Image"
-  image_uri     = var.instance_type == "google_drive" ? "aws_account_id.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-google-drive:latest" : "aws_account_id.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-s3-bucket:latest"
+output "lambda_function_status" {
+  value = length(try([data.aws_lambda_function.existing_lambda.arn], [])) == 1 ? "Lambda function exists" : "Lambda function created"
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_exec_policy" {
-  count = var.lambda_function_exists ? 0 : 1
+# A null resource to display a message based on the existence of the Lambda function
+resource "null_resource" "lambda_status" {
+  count = length(try([data.aws_lambda_function.existing_lambda.arn], [])) == 1 ? 1 : 0
 
-  role       = aws_iam_role.lambda_exec_role[count.index].name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  provisioner "local-exec" {
+    command = "echo Lambda function exists"
+  }
 }
 
-// Output the Lambda function name if it exists, otherwise output null
-output "lambda_function_name" {
-  value = var.lambda_function_exists ? null : aws_lambda_function.lambda_function[0].function_name
+resource "null_resource" "lambda_creation" {
+  count = length(try([data.aws_lambda_function.existing_lambda.arn], [])) == 0 ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "echo Lambda function created"
+  }
 }
