@@ -41,7 +41,4 @@ jobs:
           terraform apply -auto-approve \
             -var "user_id=${{ github.event.inputs.user_id }}" \
             -var "instance_id=${{ github.event.inputs.instance_id }}" \
-            -var "instance_type=${{ github.event.inputs.instance_type }}"\
-            -var "AWS_ACCOUNT_ID=${{ env.TF_VAR_docker_image_selection }}"
-         
-
+            -var "instance_type=${{ github.event.inputs.instance_type }}"
