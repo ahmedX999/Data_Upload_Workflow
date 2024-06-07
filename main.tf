@@ -33,9 +33,7 @@ locals {
   lambda_function_name = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda"
 }
 
-data "external" "lambda_check" {
-  program = ["bash", "${path.module}/check_lambda.sh", local.lambda_function_name]
-}
+
 
 locals {
   lambda_exists = data.external.lambda_check.result.result == "exists"
