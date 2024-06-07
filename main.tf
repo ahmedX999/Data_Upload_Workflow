@@ -37,18 +37,35 @@ locals {
   lambda_function_role_name = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda_role"
 }
 
-# Import the existing IAM role
-data "aws_iam_role" "existing_lambda_exec_role" {
-  name = "123_123_google_drive_lambda_role"  # Replace with the existing IAM role name
+
+# IAM Role for Lambda execution
+resource "aws_iam_role" "lambda_exec_role" {
+  name = local.lambda_function_role_name
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action    = "sts:AssumeRole",
+        Effect    = "Allow",
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
 }
 
-
-
+# Attach policy to IAM role
+resource "aws_iam_role_policy_attachment" "lambda_exec_policy" {
+  role       = aws_iam_role.lambda_exec_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
 
 # Lambda function resource
 resource "aws_lambda_function" "my_lambda" {
   function_name = local.lambda_function_name
-  role       = data.aws_iam_role.existing_lambda_exec_role.name
+  role          = aws_iam_role.lambda_exec_role.arn
   package_type  = "Image"
   image_uri     = var.instance_type == "google_drive" ? var.ecr_repository_uri_google_drive : var.ecr_repository_uri_s3_bucket
 }
