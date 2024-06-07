@@ -34,12 +34,25 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Check if Lambda function exists
+        id: check_lambda
+        run: |
+          LAMBDA_FUNCTION_NAME="${{ github.event.inputs.user_id }}_${{ github.event.inputs.instance_id }}_${{ github.event.inputs.instance_type }}_lambda"
+          FUNCTION_EXISTS=$(aws lambda get-function --function-name $LAMBDA_FUNCTION_NAME > /dev/null 2>&1 && echo "true" || echo "false")
+          echo "::set-output name=exists::$FUNCTION_EXISTS"
+
       - name: Terraform Apply
         id: apply
-        run: terraform apply -auto-approve -var "user_id=${{ github.event.inputs.user_id }}" -var "instance_id=${{ github.event.inputs.instance_id }}" -var "instance_type=${{ github.event.inputs.instance_type }}"
+        run: |
+          terraform apply -auto-approve \
+            -var "user_id=${{ github.event.inputs.user_id }}" \
+            -var "instance_id=${{ github.event.inputs.instance_id }}" \
+            -var "instance_type=${{ github.event.inputs.instance_type }}"
+        env:
+          LAMBDA_EXISTS: ${{ steps.check_lambda.outputs.exists }}
 
       - name: Output Results
         run: |
-          echo "Function Status: $(terraform output function_status)"
-          echo "Lambda Function Name: $(terraform output lambda_function_name)"
+          echo "Function Status: $(terraform output -raw lambda_function_status)"
+          echo "Lambda Function Name: $(terraform output -raw lambda_function_name)"
         id: output
