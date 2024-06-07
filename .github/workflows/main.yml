@@ -33,7 +33,10 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-
+        
+      - name: Grant execute permission to script
+        run: chmod +x check_lambda.sh
+    
       - name: Check if Lambda function exists
         id: check_lambda
         run: |
