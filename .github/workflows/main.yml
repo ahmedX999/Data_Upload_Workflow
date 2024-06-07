@@ -37,9 +37,8 @@ jobs:
       - name: Check if Lambda function exists
         id: check_lambda
         run: |
-          LAMBDA_FUNCTION_NAME="${{ github.event.inputs.user_id }}_${{ github.event.inputs.instance_id }}_${{ github.event.inputs.instance_type }}_lambda"
-          FUNCTION_EXISTS=$(aws lambda get-function --function-name $LAMBDA_FUNCTION_NAME > /dev/null 2>&1 && echo "true" || echo "false")
-          echo "::set-output name=exists::$FUNCTION_EXISTS"
+          LAMBDA_EXISTS=$(./check_lambda.sh "${{ github.event.inputs.user_id }}_${{ github.event.inputs.instance_id }}_${{ github.event.inputs.instance_type }}_lambda")
+          echo "::set-output name=exists::$LAMBDA_EXISTS"
 
       - name: Terraform Apply
         id: apply
@@ -55,4 +54,3 @@ jobs:
         run: |
           echo "Function Status: $(terraform output -raw lambda_function_status)"
           echo "Lambda Function Name: $(terraform output -raw lambda_function_name)"
-        id: output
