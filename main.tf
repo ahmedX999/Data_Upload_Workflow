@@ -8,13 +8,13 @@ provider "aws" {
 variable "ecr_repository_uri_google_drive" {
   description = "The URI of the ECR repository for Google Drive"
   type        = string
-  default     = "aws_account_id.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-google-drive:latest"
+  default     = "${var.AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-google-drive:latest"
 }
 
 variable "ecr_repository_uri_s3_bucket" {
   description = "The URI of the ECR repository for S3 Bucket"
   type        = string
-  default     = "aws_account_id.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-s3-bucket:latest"
+  default     = "${var.AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-s3-bucket:latest"
 }
 
 variable "user_id" {
