@@ -9,21 +9,17 @@ locals {
 
 # Data source to check if the Lambda function exists
 data "aws_lambda_function" "existing_lambda" {
+  count = 1
   function_name = local.lambda_function_name
-
-  # Ignore errors if the function doesn't exist
-  ignore_errors = true
 }
 
 resource "aws_lambda_function" "new_lambda" {
-  count = length(try([data.aws_lambda_function.existing_lambda.arn], [])) == 0 ? 1 : 0
+  count = length(try([data.aws_lambda_function.existing_lambda[0].arn], [])) == 0 ? 1 : 0
 
   function_name = local.lambda_function_name
   role          = aws_iam_role.lambda_exec.arn
   package_type  = "Image"
-  image_uri     = var.instance_type == "google_drive" ? "aws_account_id.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-google-drive:latest" : "aws_account_id.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-s3-bucket:latest"
-
-  # Additional configuration for the Lambda function can go here
+  image_uri     = var.instance_type == "google_drive" ? var.ecr_repository_uri_google_drive : var.ecr_repository_uri_s3_bucket
 }
 
 resource "aws_iam_role" "lambda_exec" {
@@ -49,12 +45,12 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
 }
 
 output "lambda_function_status" {
-  value = length(try([data.aws_lambda_function.existing_lambda.arn], [])) == 1 ? "Lambda function exists" : "Lambda function created"
+  value = length(try([data.aws_lambda_function.existing_lambda[0].arn], [])) == 1 ? "Lambda function exists" : "Lambda function created"
 }
 
 # Null resource to display a message based on the existence of the Lambda function
 resource "null_resource" "lambda_status" {
-  count = length(try([data.aws_lambda_function.existing_lambda.arn], [])) == 1 ? 1 : 0
+  count = length(try([data.aws_lambda_function.existing_lambda[0].arn], [])) == 1 ? 1 : 0
 
   provisioner "local-exec" {
     command = "echo Lambda function exists"
@@ -62,7 +58,7 @@ resource "null_resource" "lambda_status" {
 }
 
 resource "null_resource" "lambda_creation" {
-  count = length(try([data.aws_lambda_function.existing_lambda.arn], [])) == 0 ? 1 : 0
+  count = length(try([data.aws_lambda_function.existing_lambda[0].arn], [])) == 0 ? 1 : 0
 
   provisioner "local-exec" {
     command = "echo Lambda function created"
