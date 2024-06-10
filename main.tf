@@ -8,13 +8,13 @@ provider "aws" {
 variable "ecr_repository_uri_google_drive" {
   description = "The URI of the ECR repository for Google Drive"
   type        = string
-  default     = "063151788650.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-google-drive:latest"
+  default     = "975050103916.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-google-drive:latest"
 }
 
 variable "ecr_repository_uri_s3_bucket" {
   description = "The URI of the ECR repository for S3 Bucket"
   type        = string
-  default     = "063151788650.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-s3-bucket:latest"
+  default     = "975050103916.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-s3-bucket:latest"
 }
 
 variable "user_id" {
@@ -32,15 +32,23 @@ variable "instance_type" {
   type        = string
 }
 
+# Generate a random string for unique naming
+resource "random_string" "lambda_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+
 locals {
   lambda_function_name = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda"
-  lambda_function_role_name = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda_role"
+  iam_role_name        = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda_role"
 }
+
 
 
 # IAM Role for Lambda execution
 resource "aws_iam_role" "lambda_exec_role" {
-  name = local.lambda_function_role_name
+  name = local.iam_role_name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
