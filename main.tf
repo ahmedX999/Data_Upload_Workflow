@@ -1,9 +1,6 @@
-# main.tf
-
 provider "aws" {
   region = "us-east-1"
 }
-
 
 variable "ecr_repository_uri_google_drive" {
   description = "The URI of the ECR repository for Google Drive"
@@ -33,18 +30,16 @@ variable "instance_type" {
 }
 
 # Generate a random string for unique naming
-resource "random_string" "lambda_suffix" {
+/* resource "random_string" "lambda_suffix" {
   length  = 8
   special = false
   upper   = false
-}
+} */
 
 locals {
   lambda_function_name = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda"
   iam_role_name        = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda_role"
 }
-
-
 
 # IAM Role for Lambda execution
 resource "aws_iam_role" "lambda_exec_role" {
@@ -62,6 +57,10 @@ resource "aws_iam_role" "lambda_exec_role" {
       }
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Attach policy to IAM role
@@ -76,5 +75,12 @@ resource "aws_lambda_function" "my_lambda" {
   role          = aws_iam_role.lambda_exec_role.arn
   package_type  = "Image"
   image_uri     = var.instance_type == "google_drive" ? var.ecr_repository_uri_google_drive : var.ecr_repository_uri_s3_bucket
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
+output "lambda_function_name" {
+  value = aws_lambda_function.my_lambda.function_name
+}
