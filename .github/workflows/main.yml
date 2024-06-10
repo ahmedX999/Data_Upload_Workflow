@@ -34,9 +34,23 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Import IAM Role
+        if: steps.terraform_init.outputs.already_applied == 'false'
+        run: |
+          terraform import aws_iam_role.lambda_exec_role ${{
+            github.event.inputs.user_id }}_${{
+            github.event.inputs.instance_id }}_${{
+            github.event.inputs.instance_type }}_lambda_role || true
+
+      - name: Import Lambda Function
+        if: steps.terraform_init.outputs.already_applied == 'false'
+        run: |
+          terraform import aws_lambda_function.my_lambda ${{
+            github.event.inputs.user_id }}_${{
+            github.event.inputs.instance_id }}_${{
+            github.event.inputs.instance_type }}_lambda || true
 
       - name: Terraform Apply
-        id: apply
         run: |
           terraform apply -auto-approve \
             -var "user_id=${{ github.event.inputs.user_id }}" \
