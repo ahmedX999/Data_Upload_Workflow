@@ -1,7 +1,7 @@
 provider "aws" {
   region = "us-east-1"
 }
-
+  
 variable "ecr_repository_uri_google_drive" {
   description = "The URI of the ECR repository for Google Drive"
   type        = string
@@ -14,6 +14,7 @@ variable "ecr_repository_uri_s3_bucket" {
   default     = "975050103916.dkr.ecr.us-east-1.amazonaws.com/lambda-docker-s3-bucket:latest"
 }
 
+
 variable "user_id" {
   description = "The user ID"
   type        = string
@@ -25,7 +26,7 @@ variable "instance_id" {
 }
 
 variable "instance_type" {
-  description = "The instance type"
+  description = "The instance type : s3 or drive"
   type        = string
 }
 
@@ -33,6 +34,7 @@ locals {
   lambda_function_name = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda"
   iam_role_name        = "${var.user_id}_${var.instance_id}_${var.instance_type}_lambda_role"
 }
+
 
 # IAM Role for Lambda execution
 resource "aws_iam_role" "lambda_exec_role" {
